@@ -1,0 +1,17 @@
+This project should allows a user to send messages to a SLC16H-IR/Cheer-led device.
+
+REQUIREMENTS:
+
+python
+pyserial (aka python-serial)
+
+A working SLC16H based device connected via serial or usb.
+
+USE:
+
+  cheerled.py /dev/ttyUSB0 FirstLine [SecondLine ...]
+
+PROGRAMMING:
+
+  It should be possible to use the python code to make your own funky scripts.
+

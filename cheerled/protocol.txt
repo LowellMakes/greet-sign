@@ -1,0 +1,264 @@
+This protocol is a serial packet system which is formed around sending ASCII text to the LED signs.
+
+= Errors =
+
+ 7ê - Some sort of comm error, appears when you screw up the packets
+
+= Packet Format =
+
+Start Message: 00
+Sign Address: FF,FF (e.g. All Signs, but irelivent for usb device)
+Clear Messages: 00/01 (bool)
+[
+  SectionType: (see table)
+  [Section Options]
+  [Section Contents]
+  ...
+]
+End Message: FF,00
+
+== Section Types ==
+
+ 0x00 - Initalisation
+ 0x01 - Set Messages
+ 0x02 - Set Special File
+ 0x03 - Unknown or unused
+ 0x04 - Set Alarm
+ 0x05 - Set Hourly Alarm
+ 0x06 - Set Auto On Time
+ 0x07 - Set Auto Off Time
+ 0x08 - Set Time
+ 0x09 - Send User-Defined Images
+
+= Initalisation =
+
+All Messages seem to have a section where all bytes
+Between 00 and 7F are sent: (assume start/end message)
+
+Section Type: 0B
+Bytes: 00->7F
+End Section: FF
+
+= Set Message =
+
+A message can send Text, Images and pre-sets for display into one of 8 files
+Each with multiple lines, colours, fonts and other settings:
+
+Section Type: 01
+File: 30,31 (i.e. 01)
+Set Colour: EF,B0 (see table)
+Set Font: EF,A2 (see table)
+[Message]
+End Frame: FF
+Next File: FF,FF,FF
+
+== Message Contents ==
+
+This is how the bytes of a message are understood by the device:
+
+00-19 [0-25]     Animation Instruction (should apear BEFORE ANY Other)
+1A-1F [26-31]    ** Unused, no effect
+20-7F [32-127]   ASCII Text as expected
+80-ED [128-237]  Symbols (66 known symbols out of 109)
+EF    [239]      Next byte is Code byte (see table)
+F0-FE [240-254]  ** Unused, no effect
+FF    [255]      End Frame
+
+=== Special Code Bytes ===
+
+Each special code displays something that isn't text:
+
+00-5F [0-95]     ** Unused, No effect
+60-7D [96-125]   Pre-defined Symbols 1-30
+7E,7F [126,127]  ** Unused, cause an error
+80    [128]      Time
+81    [129]      Date
+82    [130]      Temperature (°C)
+83-8F [131-143]  ** Unused, No effect
+90-97 [144-151]  Animated Cartoons 1-8
+98-9F [152-159]  Predefined Graphics 1-8
+A0-A6 [160-166]  Set Font (See Font map)
+A7-AB [167-171]  ** Unused, cause an error
+AC-AD [172-173]  Compressed Font (unreadable)
+AE    [174]      ** Unused, cause an error
+AF    [175]      Remove letter spacing
+B0-BF [176-191]  Colours 1-16 (see colour map)
+C0-C7 [192-199]  Speeds, Fastest to Slowest
+C8-CF [200-207]  Delay between frames (lines: 3,4,5,6,8,16,32 seconds)
+D0-D7 [208-215]  Custom Graphic Set 1-8
+D8-DF [216-223]  Predefined Graphics 1-8
+E0-E9 [224-233]  Sounds (see Sound Map)
+EA-EF [234-239]  Beep Errors
+F0-FF [240-255]  ** Unused, No effect
+
+==== Sound Map ====
+
+E0 [224], Alarm Tone 1, Frame Delay 0
+E1 [225], Ringing Tone, Frame Delay 0
+E2 [226], Beep, Frame Delay 0
+E3 [227], Tit, Frame Delay 2
+E4 [228], Beep, Frame Delay 8
+E5 [229], Beep, Frame Delay 1
+E6 [230], Beep, Frame Delay 10
+E7 [231], Alarm Tone 2, Frame Delay 0
+E8 [232], 3 Tits, Frame Delay 0
+E9 [233], Tit, Frame Delay 8
+
+==== Font Map ====
+
+A0 [160], 6x8 Short
+A1 [161], 5x11 Short Wide
+A2 [162], 7x6 Default
+A3 [163], 7x11 Wide
+A4 [164], 7x9 Wider
+A5 [165], 7x17 Extra Wide
+A6 [166], Small Font
+
+==== Colour Map ====
+
+B0 [176], Red
+B1 [177], Bright Red
+B2 [178], Orange
+B3 [179], Bright Orange
+B4 [180], Yellow
+B5 [181], Bright Yellow
+B6 [182], Green
+B7 [183], Bright Green
+B8 [184], Rainbow
+B9 [185], Bright Rainbow
+BA [186], Vertical Mix
+BB [187], SawTooth Mix
+BC [188], Green On Red
+BD [189], Red On Green
+BE [190], Orange on Red
+BF [191], Yellow On Green
+
+
+=== Animations ===
+
+00 [0], Cyclic (default)
+01 [1], Cyclic
+02 [2], Immediate
+03 [3], Open from Right
+04 [4], Open from Left
+05 [5], Open from Center
+06 [6], Open to Center
+07 [7], Cover from Center
+08 [8], Cover from Right
+09 [9], Cover from Left
+0A [10], Cover to Center
+0B [11], Scroll Up
+0C [12], Scroll Down
+0D [13], Interlace to Center
+0E [14], Interlace Cover
+0F [15], Cover Up
+10 [16], Cover Down
+11 [17], Scan Line
+12 [18], Explode
+13 [19], Pac Man
+14 [20], Fall & Stack
+15 [21], Shoot
+16 [22], Flash
+17 [23], Random
+18 [24], Slide in
+19 [25], Auto
+
+
+= Set Special File =
+
+This packet seems to want to set a file being used during a certain time of the day
+8 different times for 8 different files can be selected:
+
+Section Type: 02
+Special File Id: 01 (0-9)
+Day of the Week: 01-7E (see Week Bitmap)
+Start Time: 31,31,31,37 (HHMM)
+End Time: 32,31,33,33 (HHMM)
+Files to Run: 30,31,30,32 ... (i.e 01,02 ...)
+
+== Week Bitmap ==
+
+The week is laid out as a simple bit mask, 1 means display on this week day:
+
+1, Sunday
+2, Monday
+4, Tuesday
+8, Wednesday
+16, Thursday
+32, Friday
+64, Saturday
+
+
+= Set Alarm =
+
+These are the settings for the alarm, not the alarm it's self:
+
+Section Type: 04
+Alarm Times: 01-99 (number of times to repeat)
+Interval: 1E (30) (minutes between each repeat)
+
+== Set Hourly Alarm ==
+
+Section Type: 05
+Set the Hourly Alarm On: 00/01 (bool)
+
+== Set Auto On Time ==
+
+Header: 06
+Time: 32,32,33,32,33,33 (HHMMSS)
+
+== Set Auto Off Time ==
+
+Section Type: 07
+Time: 32,31,30,36,32,32 (HHMMSS)
+
+== Set Time ==
+
+This option is most important, it will reset the time in the device:
+
+Section Type: 08
+Unknown: 01
+24 Hour Clock: 00/01
+Date: 30,39,30,33,30,39 [YYMMDD]
+Time: 30,31,31,31,34,35 [HHMMSS]
+
+= Send Image =
+
+The application does not currently work when setting the graphics,
+this information is scraped from what logic appears in the packets sent,
+but doesn't work yet:
+
+Section Type: 09
+Custom Image Id: 00-07
+Pixel Data: 280 Bytes (see section)
+End: 00, 00
+
+== Pixel Data ==
+
+The pixel data is 280 bytes long and comprises of the following:
+
+ * 7 Rows * 80 Colums
+ * Each Byte is a set of 8 pixels
+ * Each Row has 10 bytes,
+ * Each Mask has 7 Rows (70 Bytes)
+ * There are 4 masks per image
+ * Each mask when used together produce colours as follows:
+
+0000 Black         0
+1000 Dark Red      1
+1100 Red           3
+0010 Dark Green    4
+1010 Dark Yellow   5
+1110 Dark Orange   7
+0011 Green         12
+1011 Orange        13
+1111 Yellow        15
+
+So if every pixel is Red you should see 140 bytes of FF followed by 140 bytes of 00.
+This works out because the first two masks as all set, and the second two masks are not (i.e Red)
+Each mask is 70 bytes big.
+
+Author Note: This does seem rather complex, But this must have evolved from a monochrome system.
+
+After writing this, this batch file has been found: http://www.industrologic.com/dispdisk/slc16mes.bas
+

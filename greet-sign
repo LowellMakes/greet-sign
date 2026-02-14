@@ -1,6 +1,6 @@
 #!/bin/bash
 
-doorflow_api='{{ doorflow_api }}'
+doorflow_api=''
 last_id=0
 working_dir='/opt/cheerled'
 led_device=/dev/ttyUSB0

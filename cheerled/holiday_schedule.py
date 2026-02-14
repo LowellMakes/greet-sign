@@ -56,17 +56,17 @@ if (now.month, now.day) in [(12, 31), (1, 1)]:
 
 # Thanksgiving (text only)
 if is_thanksgiving():
-    print('"HAPPY THANKSGIVING"')
+    print('HAPPY THANKSGIVING')
     exit()
 
 # Pi Day example
 if now.month == 3 and now.day == 14:
-    print('"HAPPY PI DAY"')
+    print('HAPPY PI DAY')
     exit()
 
 # Open house time override
 if is_open_house():
-    print('"Welcome open house guests!!!!"')
+    print('Welcome open house guests!!!!')
     exit()
 
 

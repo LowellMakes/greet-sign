@@ -70,4 +70,5 @@ if is_open_house():
 # ---------------- DEFAULT ----------------
 
 for frame in DEFAULT_FRAMES:
-    print(f'"{frame}" -n', end=" ")
+    print(frame)
+    print("-n")

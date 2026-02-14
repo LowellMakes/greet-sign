@@ -76,7 +76,8 @@ while true; do
         		python $working_dir/cheer-text.py $led_device "Welcome to Lowell Makes" 
 			sleep 1
 		elif [ "$COUNT" = "4" ] ; then
-			python $working_dir/cheer-text.py $led_device $( python3 $working_dir/holiday_schedule.py)
+			mapfile -t MSG < <(python3 $working_dir/holiday_schedule.py)
+			python $working_dir/cheer-text.py $led_device "${MSG[@]}"
 			sleep 1
 			COUNT=0
 		fi	

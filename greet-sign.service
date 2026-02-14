@@ -2,7 +2,7 @@
 Description=LED greeter sign
 
 [Service]
-ExecStart=/home/pi/ledsign.sh
+ExecStart=/usr/local/bin/greet-sign
 
 [Install]
 WantedBy=multi-user.target

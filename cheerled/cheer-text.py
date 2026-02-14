@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
 # Copyright (C) 2009 Martin Owens
 #
@@ -18,7 +18,6 @@
 #
 
 import sys
-import os
 from cheerled import SlcDevice
 
 options = {
@@ -30,85 +29,166 @@ options = {
   '-d' : 'delay',
 }
 
+graphics = {
+    "1": 1, "city": 1,
+    "2": 2, "traffic": 2,
+    "3": 3, "coffee": 3,
+    "4": 4, "telephone": 4,
+    "5": 5, "outdoors": 5,
+    "6": 6, "boat": 6,
+    "7": 7, "swimming": 7,
+    "8": 8, "unknown": 8,
+}
+
+cartoons = {
+    "1": 1, "christmas": 1,
+    "2": 2, "newyears": 2,
+    "3": 3, "july4th": 3,
+    "4": 4, "easter": 4,
+    "5": 5, "halloween": 5,
+    "6": 6, "drinkanddrive": 6,
+    "7": 7, "nosmoking": 7,
+    "8": 8, "welcome": 8,
+}
+
 
 def usage():
-    """Print the usage of the tool"""
-    return """
+    return f"""
 Usage:
 
-  %s [DEVICE] [OPTIONS] Text Message
+  {sys.argv[0]} [DEVICE] [OPTIONS] Text Message
 
-  Options:
-    -c     - Colour
-    -s     - Speed
-    -f     - Font
-    -a     - Animation
-    -b     - Beep
-    -d     - Delay
-    -n     - New Frame
-    --file - File Number
-""" % sys.argv[0]
+Options:
+  -c             Colour
+  -s             Speed
+  -f             Font
+  -a             Animation
+  -b             Beep
+  -d             Delay
+  -n             New Frame
+  --file N       File Number
+
+  --graphic N|name
+        1|city
+        2|traffic
+        3|coffee
+        4|telephone
+        5|outdoors
+        6|boat
+        7|swimming
+        8|unknown
+  --cartoon N|name
+        1|christmas
+        2|newyears
+        3|july4th
+        4|easter
+        5|halloween
+        6|drinkanddrive
+        7|nosmoking
+        8|welcome
+"""
 
 
-def invalid_option(name, value, default=None, options=None):
-    """Print a warning about an invalid option"""
-    sys.stderr.write("Invalid %s Option: '%s'" % (name.title(), value))
-    if default:
-        sys.stderr.write(" using '%s' instead" % default)
-    sys.stderr.write("\n")
-    if options:
-        opts = "', '".join(options)
-        sys.stderr.write("\n  Possible Values: '%s'\n\n" % (opts))
+def invalid_option(name, value):
+    sys.stderr.write(f"Invalid {name}: '{value}'\n")
 
 
 def set_text_messages(device, inputs):
-    """Sets messages to the device"""
+
     args = {
-        'animation' : 'immediate',
-        'colour'    : 'yellow',
-        'font'      : 'default',
+        'animation': 'immediate',
+        'colour': 'yellow',
+        'font': 'default',
     }
+
     set_file = False
+    set_graphic = False
+    set_cartoon = False
+
     file = 1
     option = None
-    for input in inputs:
+
+    for input_value in inputs:
+
         if set_file:
-            file = int(input)
+            file = int(input_value)
+            set_file = False
             continue
-        if option != None:
-            input = input.lower()
-            if device.has_option(option, input):
-                args[option] = input
+
+        if set_graphic:
+            key = input_value.lower()
+            if key in graphics:
+                device.builtin_graphic(graphics[key])
             else:
-                opts = device.option_values(option)
-                invalid_option(option, input, args[option], opts)
+                invalid_option("graphic", input_value)
+            set_graphic = False
+            continue
+
+        if set_cartoon:
+            key = input_value.lower()
+            if key in cartoons:
+                device.builtin_cartoon(cartoons[key])
+            else:
+                invalid_option("cartoon", input_value)
+            set_cartoon = False
+            continue
+
+        if option is not None:
+            input_value = input_value.lower()
+
+            if device.has_option(option, input_value):
+                args[option] = input_value
+            else:
+                invalid_option(option, input_value)
+
             option = None
-        elif options.has_key(input):
-            option = options[input]
-        elif input == '-n':
+
+        elif input_value in options:
+            option = options[input_value]
+
+        elif input_value == '-n':
             device.new_text_frame()
-        elif '--file' in input:
-            if '=' in input:
-                tag, value = input.split('=')
+
+        elif input_value.startswith('--file'):
+            if '=' in input_value:
+                _, value = input_value.split('=', 1)
                 file = int(value)
             else:
                 set_file = True
-        elif option == None:
-            if "\n" in input:
-                parts = input.split('\n')
-                for part in parts:
+
+        elif input_value == '--graphic':
+            set_graphic = True
+
+        elif input_value.startswith('--graphic='):
+            value = input_value.split('=', 1)[1].lower()
+            if value in graphics:
+                device.builtin_graphic(graphics[value])
+            else:
+                invalid_option("graphic", value)
+
+        elif input_value == '--cartoon':
+            set_cartoon = True
+
+        elif input_value.startswith('--cartoon='):
+            value = input_value.split('=', 1)[1].lower()
+            if value in cartoons:
+                device.builtin_cartoon(cartoons[value])
+            else:
+                invalid_option("cartoon", value)
+
+        else:
+            if "\n" in input_value:
+                for part in input_value.split('\n'):
                     device.text(part, **args)
                     device.new_text_frame()
             else:
-                device.text(input, **args)
+                device.text(input_value, **args)
+
     device.send_message(file)
 
 
 if len(sys.argv) < 3:
-    print usage()
+    print(usage())
 else:
-    device = SlcDevice( sys.argv[1] )
-    if device:
-        set_text_messages(device, sys.argv[2:])
-
-
+    device = SlcDevice(sys.argv[1])
+    set_text_messages(device, sys.argv[2:])

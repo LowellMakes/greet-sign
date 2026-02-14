@@ -1,7 +1,9 @@
 #!/bin/bash
 
-doorflow_api=
+doorflow_api='{{ doorflow_api }}'
 last_id=0
+working_dir='/opt/cheerled'
+led_device=/dev/ttyUSB0
 
 check_front_door(){
 	result_front_door=$(curl -s -H 'Accept: application/json' -H 'Content-Type: application/json' -u ${doorflow_api}:xxx  https://api.doorflow.com/api/3/events/|jq -rS '.[] | select((.door_controller_id==5559) and (.person_name != null)) | [.updated_at,.id,.person_id,.person_name]|@tsv'|head -1)
@@ -48,7 +50,7 @@ while true; do
 	if [ "$front_person_id" ] && [ "$front_door_id" != "$last_id" ]; then
 		SECONDS=0
 		echo "${front_door_first} ${front_door_last} badged into front door"
-        	/home/pi/cheerled/cheer-text.py /dev/ttyUSB0 -s 1 -c red "Good $greet " -c green "$front_door_first"
+        	python $working_dir/cheer-text.py $led_device -s 1 -c red "Good $greet " -c green "$front_door_first"
 		check_front_door
 		check_warehouse
 		until [ "${front_person_id}" = "${warehouse_person_id}" ] || [ "${SECONDS}" -ge "40" ] ;
@@ -62,19 +64,19 @@ while true; do
 	else
 		let COUNT=COUNT+1
 		if [ "$COUNT" = "1" ] ; then
-        		/home/pi/cheerled/cheer-text.py /dev/ttyUSB0 -a scroll_up "Welcome to" 
+        		python $working_dir/cheer-text.py $led_device -a scroll_up "Welcome to" 
 			sleep 2
-        		/home/pi/cheerled/cheer-text.py /dev/ttyUSB0 -a scroll_down "Lowell Makes" 
+        		python $working_dir/cheer-text.py $led_device -a scroll_down "Lowell Makes" 
 			sleep 2
-        		/home/pi/cheerled/cheer-text.py /dev/ttyUSB0 "Welcome to Lowell Makes" 
+        		python $working_dir/cheer-text.py $led_device "Welcome to Lowell Makes" 
 		elif [ "$COUNT" = "2" ] ; then
-        		/home/pi/cheerled/cheer-text.py /dev/ttyUSB0 -a pacman " " 
+        		python $working_dir/cheer-text.py $led_device -a pacman " " 
 			sleep 1
 		elif [ "$COUNT" = "3" ] ; then
-        		/home/pi/cheerled/cheer-text.py /dev/ttyUSB0 "Welcome to Lowell Makes" 
+        		python $working_dir/cheer-text.py $led_device "Welcome to Lowell Makes" 
 			sleep 1
 		elif [ "$COUNT" = "4" ] ; then
-        		/home/pi/cheerled/cheer-text.py /dev/ttyUSB0 "Welcome to Lowell Makes" 
+			python $working_dir/cheer-text.py $led_device $( python3 $working_dir/holiday_schedule.py)
 			sleep 1
 			COUNT=0
 		fi	

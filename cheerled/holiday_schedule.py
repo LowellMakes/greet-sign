@@ -38,17 +38,20 @@ def is_open_house():
 
 # Entire December → Christmas cartoon takeover
 if now.month == 12:
-    print("--cartoon christmas")
+    print("--cartoon")
+    print("christmas")
     exit()
 
 # July 4
 if now.month == 7 and now.day == 4:
-    print("--cartoon july4th")
+    print("--cartoon")
+    print("july4th")
     exit()
 
 # NYE / NYD
 if (now.month, now.day) in [(12, 31), (1, 1)]:
-    print("--cartoon newyears")
+    print("--cartoon")
+    print("newyears")
     exit()
 
 # Thanksgiving (text only)
